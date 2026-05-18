@@ -36,6 +36,8 @@ function generateSDK(config, outputPath) {
       `  logout: (refreshToken) => _req('POST', '/auth/logout', { refreshToken }),`,
       `  refresh: (refreshToken) => _req('POST', '/auth/refresh', { refreshToken }),`,
       `  me: (token) => _req('GET', '/auth/me', null, token),`,
+      `  forgotPassword: (email) => _req('POST', '/auth/forgot-password', { email }),`,
+      `  resetPassword: (token, newPassword) => _req('POST', '/auth/reset-password', { token, newPassword }),`,
       `};`,
       ``
     );
@@ -83,6 +85,27 @@ function generateSDK(config, outputPath) {
     });
   }
 
+  if (features.uploads?.enabled) {
+    lines.push(
+      `// --- Uploads ---`,
+      `const skeletalUploads = {`,
+      `  single: (formData, token) => {`,
+      `    const headers = {};`,
+      `    if (token) headers['Authorization'] = 'Bearer ' + token;`,
+      `    return fetch(SKELETAL_BASE + '/uploads/single', { method: 'POST', headers, body: formData })`,
+      `      .then(r => r.json().then(j => { if (!r.ok) throw Object.assign(new Error(j.error || 'Upload failed'), { status: r.status, data: j }); return j; }));`,
+      `  },`,
+      `  multiple: (formData, token) => {`,
+      `    const headers = {};`,
+      `    if (token) headers['Authorization'] = 'Bearer ' + token;`,
+      `    return fetch(SKELETAL_BASE + '/uploads/multiple', { method: 'POST', headers, body: formData })`,
+      `      .then(r => r.json().then(j => { if (!r.ok) throw Object.assign(new Error(j.error || 'Upload failed'), { status: r.status, data: j }); return j; }));`,
+      `  },`,
+      `};`,
+      ``
+    );
+  }
+
   if (wsEnabled) {
     lines.push(
       `// --- WebSocket (requires socket.io-client) ---`,
@@ -98,6 +121,7 @@ function generateSDK(config, outputPath) {
   if (features.auth?.enabled) exports.push('skeletalAuth');
   if (features.otp?.enabled) exports.push('skeletalOTP');
   if (features.webhooks?.enabled) exports.push('skeletalWebhooks');
+  if (features.uploads?.enabled) exports.push('skeletalUploads');
   (features.crud?.models || []).forEach(m => {
     exports.push(`skeletal${m.name.charAt(0).toUpperCase() + m.name.slice(1)}`);
   });

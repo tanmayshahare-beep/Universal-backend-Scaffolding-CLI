@@ -12,6 +12,19 @@ function createServer(config) {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
+  const features = config.features || {};
+
+  if (features.logging?.enabled) {
+    const morgan = require('morgan');
+    app.use(morgan(features.logging.format || 'dev'));
+  }
+
+  const { createLimiters } = require('../modules/ratelimit');
+  const { globalLimiter, authLimiter } = createLimiters(config);
+  app.use('/api', globalLimiter);
+  app.use('/api/auth/login', authLimiter);
+  app.use('/api/auth/forgot-password', authLimiter);
+
   const io = new Server(server, {
     cors: { origin: allowedOrigins, methods: ['GET', 'POST'] }
   });
@@ -19,7 +32,6 @@ function createServer(config) {
   app.set('io', io);
 
   // Mount enabled modules
-  const features = config.features || {};
 
   if (features.auth?.enabled) {
     const authRoutes = require('../modules/auth/routes');
@@ -42,6 +54,13 @@ function createServer(config) {
       const router = generateCrudRoutes(model, config);
       app.use(`/api/${model.name.toLowerCase()}`, router);
     });
+  }
+
+  if (features.uploads?.enabled) {
+    const uploadsRoutes = require('../modules/uploads/routes');
+    const uploadDest = features.uploads.destination || 'uploads/';
+    app.use('/api/uploads', uploadsRoutes(config));
+    app.use('/uploads', express.static(uploadDest));
   }
 
   // Health check

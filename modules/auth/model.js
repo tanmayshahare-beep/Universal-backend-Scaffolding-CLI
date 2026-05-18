@@ -8,6 +8,8 @@ const userSchema = new mongoose.Schema({
   role: { type: String, default: 'user' },
   isVerified: { type: Boolean, default: false },
   refreshTokens: [{ type: String }],
+  resetToken: { type: String },
+  resetExpiry: { type: Date },
   metadata: { type: mongoose.Schema.Types.Mixed, default: {} }
 }, { timestamps: true });
 
@@ -25,6 +27,8 @@ userSchema.methods.toSafeObject = function () {
   const obj = this.toObject();
   delete obj.password;
   delete obj.refreshTokens;
+  delete obj.resetToken;
+  delete obj.resetExpiry;
   return obj;
 };
 

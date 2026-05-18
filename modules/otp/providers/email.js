@@ -2,12 +2,20 @@ const nodemailer = require('nodemailer');
 
 async function sendEmailOTP(target, code, config) {
   const emailCfg = config.features.otp.email;
-  const transporter = nodemailer.createTransport({
-    host: emailCfg.host || 'smtp.gmail.com',
-    port: emailCfg.port || 587,
-    secure: emailCfg.port === 465,
-    auth: { user: emailCfg.user, pass: emailCfg.pass }
-  });
+
+  const isGmail = emailCfg.provider === 'gmail' ||
+    (emailCfg.host || '').toLowerCase().includes('gmail.com');
+
+  const transportConfig = isGmail
+    ? { service: 'gmail', auth: { user: emailCfg.user, pass: emailCfg.pass } }
+    : {
+        host: emailCfg.host,
+        port: emailCfg.port || 587,
+        secure: emailCfg.port === 465,
+        auth: { user: emailCfg.user, pass: emailCfg.pass }
+      };
+
+  const transporter = nodemailer.createTransport(transportConfig);
 
   await transporter.sendMail({
     from: `"${config.project.name}" <${emailCfg.user}>`,

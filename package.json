@@ -10,7 +10,9 @@
     "start": "node start.js",
     "setup": "node cli/index.js init",
     "status": "node cli/index.js status",
-    "add-model": "node cli/index.js add-model"
+    "add-model": "node cli/index.js add-model",
+    "demo:setup": "node demo/setup-demo.js",
+    "demo": "node demo/server.js"
   },
   "dependencies": {
     "axios": "^1.6.0",
@@ -20,9 +22,12 @@
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "express-rate-limit": "^8.5.2",
     "inquirer": "^8.2.6",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.0.0",
+    "morgan": "^1.10.1",
+    "multer": "^2.1.1",
     "nodemailer": "^8.0.7",
     "socket.io": "^4.6.1",
     "twilio": "^4.19.0",

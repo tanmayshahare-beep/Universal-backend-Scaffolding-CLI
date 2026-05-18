@@ -103,9 +103,25 @@ program
       { type: 'confirm', name: 'auth', message: 'Require JWT auth?', default: true }
     ]);
 
+    let roles = [];
+    if (modelInfo.auth) {
+      const { rolesInput } = await inquirer.prompt([
+        { name: 'rolesInput', message: 'Restrict to roles (comma-separated, blank = any auth user):', default: '' }
+      ]);
+      roles = rolesInput.split(',').map(r => r.trim()).filter(Boolean);
+    }
+
+    const { softDelete } = await inquirer.prompt([
+      { type: 'confirm', name: 'softDelete', message: 'Enable soft delete for this model?', default: false }
+    ]);
+
     if (!config.features.crud) config.features.crud = { enabled: true, models: [] };
     if (!config.features.crud.models) config.features.crud.models = [];
-    config.features.crud.models.push({ name: modelInfo.name.toLowerCase(), fields: JSON.parse(modelInfo.fields), auth: modelInfo.auth });
+
+    const entry = { name: modelInfo.name.toLowerCase(), fields: JSON.parse(modelInfo.fields), auth: modelInfo.auth, softDelete };
+    if (roles.length) entry.roles = roles;
+
+    config.features.crud.models.push(entry);
     config.features.crud.enabled = true;
 
     saveConfig(config);

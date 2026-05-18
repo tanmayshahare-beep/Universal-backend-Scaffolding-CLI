@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const User = require('./model');
+const { sendEmail } = require('../email');
 
 function makeTokens(user, config) {
   const authCfg = config.features.auth;
@@ -71,4 +73,55 @@ async function me(req, res) {
   res.json({ user: user.toSafeObject() });
 }
 
-module.exports = { register, login, refresh, logout, me };
+async function forgotPassword(req, res, config) {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email required' });
+
+  const user = await User.findOne({ email });
+  const token = crypto.randomBytes(32).toString('hex');
+
+  if (user) {
+    user.resetToken = token;
+    user.resetExpiry = new Date(Date.now() + 60 * 60 * 1000);
+    await user.save();
+
+    let emailSent = false;
+    try {
+      await sendEmail({
+        to: email,
+        subject: 'Password reset',
+        html: `<p>Your password reset token: <strong>${token}</strong></p><p>Expires in 1 hour.</p>`,
+        text: `Your password reset token: ${token}\nExpires in 1 hour.`,
+        config
+      });
+      emailSent = true;
+    } catch (_) {}
+
+    if (!emailSent && process.env.NODE_ENV !== 'production') {
+      return res.json({ message: 'Reset token generated (email not configured)', token });
+    }
+  }
+
+  if (!user && process.env.NODE_ENV !== 'production') {
+    return res.json({ message: 'If that email exists, a reset link has been sent.' });
+  }
+
+  res.json({ message: 'If that email exists, a reset link has been sent.' });
+}
+
+async function resetPassword(req, res) {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword) return res.status(400).json({ error: 'Token and newPassword required' });
+
+  const user = await User.findOne({ resetToken: token, resetExpiry: { $gt: new Date() } });
+  if (!user) return res.status(400).json({ error: 'Invalid or expired token' });
+
+  user.password = newPassword;
+  user.resetToken = undefined;
+  user.resetExpiry = undefined;
+  await user.save();
+
+  res.json({ message: 'Password updated successfully' });
+}
+
+module.exports = { register, login, refresh, logout, me, forgotPassword, resetPassword };

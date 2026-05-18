@@ -8,21 +8,19 @@
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Step 1 — Install dependencies
-  Open a terminal in this folder and run:
+  Open a terminal IN THE SKELETAL-DOCK FOLDER and run:
   > npm install
 
 Step 2 — Run the setup wizard
   > npm run setup
 
   The wizard will ask you:
-  - Project name
-  - Port number (default: 3001)
-  - MongoDB URI (e.g. mongodb://localhost:27017/my-app
-                  or  mongodb+srv://... for Atlas)
-  - Which features to enable (auth, otp, webhooks, crud)
-  - Feature-specific settings (SMTP credentials, Twilio keys, etc.)
-  - Any CRUD models you want (or skip for now)
-  - Whether to generate the frontend SDK file
+  - Project name and port (default: 3001)
+  - MongoDB URI
+  - Which features to enable (see full list below)
+  - Feature-specific settings
+  - Any CRUD models you want
+  - Whether to generate the frontend SDK
 
   At the end it creates:
     skeletal.config.json  — your backend configuration
@@ -34,17 +32,43 @@ Step 3 — Start the server
   You will see:
     [skeletal-dock] MongoDB connected
     [skeletal-dock] Server running on port 3001
-    [skeletal-dock] Enabled modules: auth, otp, webhooks, crud
+    [skeletal-dock] Enabled modules: auth, otp, webhooks, crud, ...
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 2: USING IN A NEW PROJECT
+  PART 2: RUNNING THE DEMO
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Each new website you make:
+A browser-based tester is included that covers every feature.
+
+  Step 1 — Create the demo config (first time only):
+    > npm run demo:setup
+    This creates skeletal.config.json with demo settings.
+    It will ask if you want to set up Gmail for OTP emails.
+
+  Step 2 — Start the backend (Terminal 1):
+    > npm start
+
+  Step 3 — Start the demo UI (Terminal 2):
+    > npm run demo
+
+  Step 4 — Open in browser:
+    http://localhost:3000
+
+  IMPORTANT: Always run these commands from inside the
+  skeletal-dock folder, not from your home directory.
+
+  The demo UI has tabs for: Health, Auth, OTP, Webhooks,
+  CRUD, Uploads, WebSocket. It has a dark/light mode toggle
+  in the top-right corner.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PART 3: USING IN A NEW PROJECT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   1. Copy this entire "skeletal-dock" folder into the new project
-     (or keep one copy on your machine and run it as a separate service)
+     (or keep one copy on your machine and run it as a service)
 
   2. Open a terminal in the skeletal-dock folder
 
@@ -57,19 +81,26 @@ Each new website you make:
   5. Copy "skeletal-client.js" into your frontend source folder
 
   6. Import it in your frontend code and use it
-     (see PART 4 below for examples)
+     (see PART 5 below for examples)
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 3: TERMINAL COMMANDS REFERENCE
+  PART 4: TERMINAL COMMANDS REFERENCE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   npm run setup
     Runs the full interactive wizard.
-    Use this for a new project or to change major settings.
+    Use this for a new project or to change settings.
 
   npm start
     Starts the backend server on the configured port.
+
+  npm run demo:setup
+    Creates a demo skeletal.config.json.
+    Asks if you want to configure Gmail for OTP emails.
+
+  npm run demo
+    Starts the demo UI on http://localhost:3000
 
   node cli/index.js status
     Prints a summary of what's currently enabled.
@@ -78,29 +109,33 @@ Each new website you make:
       Port    : 3001
       MongoDB : mongodb://localhost:27017/my-shop
       ✓  Auth (JWT)
-      ✓  OTP Email
+      ✓  OTP Email (Gmail)
       ✗  OTP SMS
       ✓  Webhooks
       ✓  Auto CRUD
+      ✓  Rate Limiting
+      ✓  File Uploads
+      ✓  Request Logging
       ✓  WebSocket
       CRUD Models:
-        product — name:String, price:Number, inStock:Boolean [auth]
+        product — name:String, price:Number [auth] [roles: admin] [softDelete]
 
   node cli/index.js add-model
     Adds a new CRUD model without re-running the full wizard.
-    Prompts for: model name, fields (as JSON), require auth yes/no.
-    Then restart the server to activate new endpoints.
+    Prompts for: model name, fields (as JSON), auth yes/no,
+    roles (if auth), soft delete yes/no.
+    Then restart the server to activate.
 
   node cli/index.js regen-sdk
     Regenerates skeletal-client.js from the current config.
-    Run this any time you change the config and need an updated SDK.
+    Run this any time you change the config.
 
   node cli/index.js --help
     Lists all available commands.
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 4: FRONTEND SDK USAGE EXAMPLES
+  PART 5: FRONTEND SDK USAGE EXAMPLES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Copy skeletal-client.js into your frontend, then:
@@ -121,6 +156,16 @@ Copy skeletal-client.js into your frontend, then:
 
   // Logout
   await skeletalAuth.logout(refreshToken);
+
+  --- PASSWORD RESET ---
+
+  // Step 1: request reset (sends email if configured)
+  await skeletalAuth.forgotPassword('user@email.com');
+  // In development (NODE_ENV not set), the token is returned in the response.
+  // In production, it is only sent by email.
+
+  // Step 2: set new password using the token
+  await skeletalAuth.resetPassword(token, 'newpassword123');
 
   --- OTP ---
 
@@ -156,6 +201,23 @@ Copy skeletal-client.js into your frontend, then:
   // Remove a webhook
   await skeletalWebhooks.remove(webhookId);
 
+  --- FILE UPLOADS ---
+
+  // Single file upload
+  const form = new FormData();
+  form.append('file', fileInput.files[0]);
+  const { url, filename } = await skeletalUploads.single(form, token);
+  // url is like: /uploads/1234567890-photo.jpg
+
+  // Multiple file upload
+  const form = new FormData();
+  fileInput.files.forEach(f => form.append('files', f));
+  const { files } = await skeletalUploads.multiple(form, token);
+  // files is an array of { url, filename, size, mimetype }
+
+  // Access an uploaded file (no auth needed)
+  <img src="http://localhost:3001/uploads/1234567890-photo.jpg" />
+
   --- CRUD (example model: product) ---
 
   const token = localStorage.getItem('token');
@@ -172,8 +234,11 @@ Copy skeletal-client.js into your frontend, then:
   // Update
   await skeletalProduct.update('64f...id', { price: 12.99 }, token);
 
-  // Delete
+  // Delete (soft delete: marks as deleted, does not remove)
   await skeletalProduct.remove('64f...id', token);
+
+  // Restore a soft-deleted record (call the API directly — no SDK method)
+  await fetch('/api/product/64f...id/restore', { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
 
   --- WEBSOCKET (real-time) ---
 
@@ -190,10 +255,10 @@ Copy skeletal-client.js into your frontend, then:
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 5: ADDING A NEW CRUD MODEL
+  PART 6: ADDING A NEW CRUD MODEL
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Option A — During wizard (npm run setup, answer yes to "Add a CRUD model")
+Option A — During wizard (npm run setup)
 
 Option B — After setup, without re-running the full wizard:
   > node cli/index.js add-model
@@ -202,9 +267,18 @@ Option B — After setup, without re-running the full wizard:
   ? Model name: post
   ? Fields as JSON: {"title":"String","body":"String","published":"Boolean"}
   ? Require JWT auth? Yes
+  ? Restrict to roles (leave blank for any auth user): admin
+  ? Enable soft delete? No
 
-  Available field types:
+  Available simple field types:
     String, Number, Boolean, Date, ObjectId, Mixed, Array
+
+  Advanced field definition (with validation):
+    {
+      "title": { "type": "String", "required": true, "minLength": 3, "maxLength": 200 },
+      "price": { "type": "Number", "required": true, "min": 0 },
+      "status": { "type": "String", "enum": ["draft", "published"] }
+    }
 
   After adding, restart the server:
   > npm start
@@ -215,28 +289,150 @@ Option B — After setup, without re-running the full wizard:
     POST   /api/post
     PUT    /api/post/:id
     DELETE /api/post/:id
+    POST   /api/post/:id/restore  (only if soft delete enabled)
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 6: CONFIGURING EMAIL (SMTP / GMAIL)
+  PART 7: ROLE-BASED ACCESS CONTROL (RBAC)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-For Gmail:
-  1. Go to Google Account > Security > 2-Step Verification > App Passwords
-  2. Create an app password for "Mail"
-  3. Use that 16-character password (NOT your Gmail password) in the wizard
+  Users are created with role: "user" by default.
 
-  Host : smtp.gmail.com
-  Port : 587
-  User : youraddress@gmail.com
-  Pass : (the 16-char app password)
+  To restrict a CRUD model to specific roles, set "roles"
+  in the model config:
 
-For other providers (Outlook, SendGrid, etc.):
-  Check their SMTP settings and enter them in the wizard.
+    { "name": "report", "fields": {...}, "auth": true, "roles": ["admin"] }
+
+  A request from a user with role "user" will receive 403.
+
+  To promote a user to admin, update their document in
+  MongoDB directly:
+    db.users.updateOne({ email: "you@example.com" }, { $set: { role: "admin" } })
+
+  Or build an admin endpoint in your own application code.
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 7: CONFIGURING SMS (TWILIO)
+  PART 8: SOFT DELETE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Enable per model:
+    { "name": "post", "fields": {...}, "softDelete": true }
+
+  How it works:
+  - DELETE /api/post/:id  →  sets deletedAt to current time
+  - GET    /api/post      →  automatically excludes deleted records
+  - GET    /api/post/:id  →  returns 404 if deleted
+  - POST   /api/post/:id/restore  →  clears deletedAt, record is visible again
+
+  Deleted records stay in the database and can be restored
+  at any time. To permanently remove them, do it directly
+  in MongoDB.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PART 9: FILE UPLOADS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Enable in the wizard or set in config:
+    "uploads": {
+      "enabled": true,
+      "destination": "uploads/",
+      "maxSizeMb": 5,
+      "maxFiles": 10,
+      "allowedTypes": ["image/jpeg", "image/png", "application/pdf"],
+      "auth": true
+    }
+
+  Endpoints:
+    POST /api/uploads/single    — field name: "file"
+    POST /api/uploads/multiple  — field name: "files"
+
+  Files are stored in the destination folder and served at:
+    GET /uploads/<filename>
+
+  The uploads folder is created automatically on server start.
+  If "auth" is true, a valid JWT token is required to upload.
+
+  Leave "allowedTypes" out of the config to allow any file type.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PART 10: RATE LIMITING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Enable in the wizard or set in config:
+    "rateLimit": {
+      "enabled": true,
+      "globalMax": 100,
+      "authMax": 20,
+      "windowMs": 900000
+    }
+
+  globalMax — max requests per window for all /api routes (default 100)
+  authMax   — stricter limit applied to /api/auth/login and
+              /api/auth/forgot-password (default 20)
+  windowMs  — window in milliseconds (900000 = 15 minutes)
+
+  When a limit is exceeded the server returns:
+    429 { "error": "Too many requests, please try again later." }
+
+  If you hit rate limits during development, increase the
+  limits in skeletal.config.json and restart the server.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PART 11: CONFIGURING EMAIL (GMAIL APP PASSWORD)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Gmail is the easiest option — no SMTP server knowledge needed.
+
+  1. Go to myaccount.google.com/security
+  2. Turn on 2-Step Verification (required)
+  3. Search "App passwords" → create one → copy the 16-char code
+     (spaces in the code are fine, they are ignored automatically)
+
+  In the wizard, choose "Gmail App Password" when asked
+  for the email provider. Enter:
+    Gmail address : youraddress@gmail.com
+    App Password  : the 16-character code
+
+  Gmail is used for:
+  - OTP email codes
+  - Password reset emails
+
+  For other providers (Outlook, SendGrid, etc.):
+  Choose "Custom SMTP" in the wizard and enter:
+    Host : your SMTP host
+    Port : usually 587
+    User : your email address
+    Pass : your SMTP password
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PART 12: PASSWORD RESET FLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  POST /api/auth/forgot-password   { email }
+    - Generates a reset token (expires in 1 hour)
+    - Sends the token by email if email is configured
+    - In development (NODE_ENV not set to "production"),
+      the token is also returned in the response so you
+      can test without email configured
+    - Always returns the same generic message to prevent
+      user enumeration
+
+  POST /api/auth/reset-password    { token, newPassword }
+    - Validates the token and expiry
+    - Updates the user's password
+    - Invalidates the token immediately after use
+
+  To hide the token from responses in production:
+    Set NODE_ENV=production in your .env file
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PART 13: CONFIGURING SMS (TWILIO)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   1. Sign up at twilio.com
@@ -250,49 +446,59 @@ For other providers (Outlook, SendGrid, etc.):
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 8: ENVIRONMENT VARIABLES
+  PART 14: ENVIRONMENT VARIABLES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Create a .env file in this folder (copy .env.example):
+  Create a .env file in this folder (copy .env.example):
+
   PORT=3001
   MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/dbname
+  NODE_ENV=production
 
-These override the values in skeletal.config.json.
-Useful for production deployments where you don't want secrets in JSON.
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 9: ALL API ENDPOINTS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Base URL: http://localhost:3001/api
-
-  GET  /health                    → server status check
-
-  POST /auth/register             → { email, password, name }
-  POST /auth/login                → { email, password }
-  POST /auth/refresh              → { refreshToken }
-  POST /auth/logout               → { refreshToken }
-  GET  /auth/me                   → header: Authorization: Bearer <token>
-
-  POST /otp/send                  → { target, type, purpose? }
-  POST /otp/verify                → { target, code, type, purpose? }
-
-  POST   /webhooks/register       → { url, events?, label?, secret? }
-  GET    /webhooks                → list all
-  DELETE /webhooks/:id            → remove one
-  POST   /webhooks/trigger        → { event, data }
-  POST   /webhooks/inbound        → receives signed webhook payloads
-
-  GET    /api/<model>             → list (paginated)
-  GET    /api/<model>/:id         → get one
-  POST   /api/<model>             → create
-  PUT    /api/<model>/:id         → update
-  DELETE /api/<model>/:id         → delete
+  These override the values in skeletal.config.json.
+  NODE_ENV=production hides the dev-only reset token from
+  password reset responses.
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 10: TROUBLESHOOTING
+  PART 15: ALL API ENDPOINTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Base URL: http://localhost:3001/api
+
+  GET  /api/health                      → server status check
+
+  POST /api/auth/register               → { email, password, name }
+  POST /api/auth/login                  → { email, password }
+  POST /api/auth/refresh                → { refreshToken }
+  POST /api/auth/logout                 → { refreshToken }
+  GET  /api/auth/me                     → header: Authorization: Bearer <token>
+  POST /api/auth/forgot-password        → { email }
+  POST /api/auth/reset-password         → { token, newPassword }
+
+  POST /api/otp/send                    → { target, type, purpose? }
+  POST /api/otp/verify                  → { target, code, type, purpose? }
+
+  POST   /api/webhooks/register         → { url, events?, label?, secret? }
+  GET    /api/webhooks                  → list all
+  DELETE /api/webhooks/:id              → remove one
+  POST   /api/webhooks/trigger          → { event, data }  [auth required]
+  POST   /api/webhooks/inbound          → receives signed webhook payloads
+
+  POST /api/uploads/single              → multipart, field: "file"
+  POST /api/uploads/multiple            → multipart, field: "files"
+  GET  /uploads/<filename>              → serve uploaded file (static)
+
+  GET    /api/<model>                   → list (paginated, filters)
+  GET    /api/<model>/:id               → get one
+  POST   /api/<model>                   → create
+  PUT    /api/<model>/:id               → update
+  DELETE /api/<model>/:id               → delete (or soft-delete)
+  POST   /api/<model>/:id/restore       → restore soft-deleted record
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PART 16: TROUBLESHOOTING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   "No skeletal.config.json found"
@@ -300,11 +506,11 @@ Base URL: http://localhost:3001/api
 
   "MongoDB connection failed"
     → Check your MongoDB URI is correct and MongoDB is running
-    → For Atlas, check your IP is whitelisted in Network Access
+    → For Atlas, whitelist your IP in Network Access
 
   OTP email not sending
-    → Make sure you used an App Password (not your real Gmail password)
-    → Check your SMTP host and port settings
+    → Make sure you used an App Password (not your Gmail password)
+    → Check 2-Step Verification is on in your Google Account
 
   CORS errors in browser
     → Re-run npm run setup and add your frontend origin
@@ -315,5 +521,24 @@ Base URL: http://localhost:3001/api
 
   skeletal-client.js is out of date
     → Run: node cli/index.js regen-sdk
+
+  429 Too many requests during testing
+    → Increase globalMax or authMax in skeletal.config.json
+    → Restart the server after changing the config
+
+  Upload fails immediately
+    → Make sure the server has been started at least once
+      (it creates the uploads folder on startup)
+    → Check the file type is in allowedTypes (or remove that
+      field from config to allow all types)
+
+  Password reset token not in response
+    → NODE_ENV=production hides the token for security
+    → Remove that env var or set to "development" for testing
+
+  "node demo/server.js" says module not found
+    → You are in the wrong folder. Run:
+       cd "C:\path\to\skeletal dock"
+       npm run demo
 
 ========================================================

@@ -51,7 +51,10 @@ async function runWizard(existing) {
         { name: 'Auth (JWT login/register)', value: 'auth', checked: cfg.features?.auth?.enabled !== false },
         { name: 'OTP (email & SMS verification)', value: 'otp', checked: cfg.features?.otp?.enabled !== false },
         { name: 'Webhooks (send & receive)', value: 'webhooks', checked: cfg.features?.webhooks?.enabled !== false },
-        { name: 'Auto CRUD (schema → REST endpoints)', value: 'crud', checked: cfg.features?.crud?.enabled !== false }
+        { name: 'Auto CRUD (schema → REST endpoints)', value: 'crud', checked: cfg.features?.crud?.enabled !== false },
+        { name: 'Rate Limiting (express-rate-limit)', value: 'rateLimit', checked: cfg.features?.rateLimit?.enabled === true },
+        { name: 'File Uploads (multer)', value: 'uploads', checked: cfg.features?.uploads?.enabled === true },
+        { name: 'Request Logging (morgan)', value: 'logging', checked: cfg.features?.logging?.enabled === true }
       ]
     }
   ]);
@@ -107,13 +110,51 @@ async function runWizard(existing) {
 
     let emailCfg = { enabled: false };
     if (otpBase.channels.includes('email')) {
-      const em = await inquirer.prompt([
-        { name: 'host', message: 'SMTP host:', default: cfg.features?.otp?.email?.host || 'smtp.gmail.com' },
-        { name: 'port', message: 'SMTP port:', default: cfg.features?.otp?.email?.port || 587 },
-        { name: 'user', message: 'SMTP user (email address):', default: cfg.features?.otp?.email?.user || '' },
-        { name: 'pass', message: 'SMTP password / app password:', default: cfg.features?.otp?.email?.pass || '' }
-      ]);
-      emailCfg = { enabled: true, ...em, port: Number(em.port) };
+      const currentProvider = cfg.features?.otp?.email?.provider === 'gmail' ||
+        (cfg.features?.otp?.email?.host || '').includes('gmail') ? 'gmail' : 'smtp';
+
+      const { emailProvider } = await inquirer.prompt([{
+        type: 'list',
+        name: 'emailProvider',
+        message: 'Email provider:',
+        default: currentProvider,
+        choices: [
+          { name: 'Gmail App Password  (just your Gmail address + 16-char app password)', value: 'gmail' },
+          { name: 'Custom SMTP         (Outlook, SendGrid, or any mail server)', value: 'smtp' }
+        ]
+      }]);
+
+      if (emailProvider === 'gmail') {
+        console.log('\n  Get an App Password: Google Account → Security → 2-Step Verification → App passwords\n');
+        const gm = await inquirer.prompt([
+          {
+            name: 'user',
+            message: 'Gmail address:',
+            default: cfg.features?.otp?.email?.user || '',
+            validate: v => v.includes('@') ? true : 'Enter a valid email address'
+          },
+          {
+            name: 'pass',
+            message: 'App Password (16 chars — spaces are ignored):',
+            default: cfg.features?.otp?.email?.pass || '',
+            validate: v => v.replace(/\s/g, '').length === 16 ? true : 'App password must be exactly 16 characters'
+          }
+        ]);
+        emailCfg = {
+          enabled: true,
+          provider: 'gmail',
+          user: gm.user.trim(),
+          pass: gm.pass.replace(/\s/g, '')
+        };
+      } else {
+        const em = await inquirer.prompt([
+          { name: 'host', message: 'SMTP host:', default: cfg.features?.otp?.email?.host || '' },
+          { name: 'port', message: 'SMTP port:', default: cfg.features?.otp?.email?.port || 587 },
+          { name: 'user', message: 'SMTP user (email address):', default: cfg.features?.otp?.email?.user || '' },
+          { name: 'pass', message: 'SMTP password:', default: cfg.features?.otp?.email?.pass || '' }
+        ]);
+        emailCfg = { enabled: true, ...em, port: Number(em.port) };
+      }
     }
 
     let smsCfg = { enabled: false };
@@ -154,6 +195,80 @@ async function runWizard(existing) {
     features.webhooks = { enabled: false };
   }
 
+  // ── Rate limit config ──────────────────────────────────────────────────────
+  if (enabledFeatures.includes('rateLimit')) {
+    const rl = await inquirer.prompt([
+      {
+        name: 'globalMax',
+        message: 'Max requests per 15 min (global):',
+        default: cfg.features?.rateLimit?.globalMax || 100
+      },
+      {
+        name: 'authMax',
+        message: 'Max requests per 15 min (auth routes):',
+        default: cfg.features?.rateLimit?.authMax || 20
+      }
+    ]);
+    features.rateLimit = {
+      enabled: true,
+      windowMs: 15 * 60 * 1000,
+      globalMax: Number(rl.globalMax),
+      authMax: Number(rl.authMax)
+    };
+  } else {
+    features.rateLimit = { enabled: false };
+  }
+
+  // ── Uploads config ─────────────────────────────────────────────────────────
+  if (enabledFeatures.includes('uploads')) {
+    const up = await inquirer.prompt([
+      {
+        name: 'destination',
+        message: 'Upload destination directory:',
+        default: cfg.features?.uploads?.destination || 'uploads/'
+      },
+      {
+        name: 'maxSizeMb',
+        message: 'Max file size (MB):',
+        default: cfg.features?.uploads?.maxSizeMb || 5
+      },
+      {
+        type: 'confirm',
+        name: 'auth',
+        message: 'Require JWT auth for uploads?',
+        default: cfg.features?.uploads?.auth !== false
+      }
+    ]);
+    features.uploads = {
+      enabled: true,
+      destination: up.destination,
+      maxSizeMb: Number(up.maxSizeMb),
+      auth: up.auth
+    };
+  } else {
+    features.uploads = { enabled: false };
+  }
+
+  // ── Logging config ─────────────────────────────────────────────────────────
+  if (enabledFeatures.includes('logging')) {
+    const lg = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'format',
+        message: 'Log format:',
+        default: cfg.features?.logging?.format || 'dev',
+        choices: [
+          { name: 'dev      (colored, short)', value: 'dev' },
+          { name: 'combined (Apache combined)', value: 'combined' },
+          { name: 'tiny     (minimal)', value: 'tiny' }
+        ]
+      }
+    ]);
+    features.logging = { enabled: true, format: lg.format };
+  } else {
+    features.logging = { enabled: false };
+  }
+
   // ── CRUD models ────────────────────────────────────────────────────────────
   if (enabledFeatures.includes('crud')) {
     const existingModels = cfg.features?.crud?.models || [];
@@ -183,11 +298,27 @@ async function runWizard(existing) {
         { type: 'confirm', name: 'auth', message: 'Require JWT auth for this model?', default: true }
       ]);
 
-      models.push({
+      let roles = [];
+      if (modelInfo.auth) {
+        const { rolesInput } = await inquirer.prompt([
+          { name: 'rolesInput', message: 'Restrict to roles (comma-separated, blank = any auth user):', default: '' }
+        ]);
+        roles = rolesInput.split(',').map(r => r.trim()).filter(Boolean);
+      }
+
+      const { softDelete } = await inquirer.prompt([
+        { type: 'confirm', name: 'softDelete', message: 'Enable soft delete for this model?', default: false }
+      ]);
+
+      const entry = {
         name: modelInfo.name.toLowerCase(),
         fields: JSON.parse(modelInfo.fields),
-        auth: modelInfo.auth
-      });
+        auth: modelInfo.auth,
+        softDelete
+      };
+      if (roles.length) entry.roles = roles;
+
+      models.push(entry);
       console.log(`  Model "${modelInfo.name}" added.`);
     }
 
