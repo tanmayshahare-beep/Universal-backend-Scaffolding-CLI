@@ -1,0 +1,319 @@
+========================================================
+  SKELETAL-DOCK — STEP BY STEP INSTRUCTIONS
+========================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PART 1: FIRST-TIME SETUP (DO THIS ONCE)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Step 1 — Install dependencies
+  Open a terminal in this folder and run:
+  > npm install
+
+Step 2 — Run the setup wizard
+  > npm run setup
+
+  The wizard will ask you:
+  - Project name
+  - Port number (default: 3001)
+  - MongoDB URI (e.g. mongodb://localhost:27017/my-app
+                  or  mongodb+srv://... for Atlas)
+  - Which features to enable (auth, otp, webhooks, crud)
+  - Feature-specific settings (SMTP credentials, Twilio keys, etc.)
+  - Any CRUD models you want (or skip for now)
+  - Whether to generate the frontend SDK file
+
+  At the end it creates:
+    skeletal.config.json  — your backend configuration
+    skeletal-client.js    — your frontend SDK (if you chose yes)
+
+Step 3 — Start the server
+  > npm start
+
+  You will see:
+    [skeletal-dock] MongoDB connected
+    [skeletal-dock] Server running on port 3001
+    [skeletal-dock] Enabled modules: auth, otp, webhooks, crud
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PART 2: USING IN A NEW PROJECT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Each new website you make:
+
+  1. Copy this entire "skeletal-dock" folder into the new project
+     (or keep one copy on your machine and run it as a separate service)
+
+  2. Open a terminal in the skeletal-dock folder
+
+  3. Run the wizard for THIS project:
+     > npm run setup
+
+  4. Start the backend:
+     > npm start
+
+  5. Copy "skeletal-client.js" into your frontend source folder
+
+  6. Import it in your frontend code and use it
+     (see PART 4 below for examples)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PART 3: TERMINAL COMMANDS REFERENCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  npm run setup
+    Runs the full interactive wizard.
+    Use this for a new project or to change major settings.
+
+  npm start
+    Starts the backend server on the configured port.
+
+  node cli/index.js status
+    Prints a summary of what's currently enabled.
+    Example output:
+      Project : my-shop
+      Port    : 3001
+      MongoDB : mongodb://localhost:27017/my-shop
+      ✓  Auth (JWT)
+      ✓  OTP Email
+      ✗  OTP SMS
+      ✓  Webhooks
+      ✓  Auto CRUD
+      ✓  WebSocket
+      CRUD Models:
+        product — name:String, price:Number, inStock:Boolean [auth]
+
+  node cli/index.js add-model
+    Adds a new CRUD model without re-running the full wizard.
+    Prompts for: model name, fields (as JSON), require auth yes/no.
+    Then restart the server to activate new endpoints.
+
+  node cli/index.js regen-sdk
+    Regenerates skeletal-client.js from the current config.
+    Run this any time you change the config and need an updated SDK.
+
+  node cli/index.js --help
+    Lists all available commands.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PART 4: FRONTEND SDK USAGE EXAMPLES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Copy skeletal-client.js into your frontend, then:
+
+  --- AUTH ---
+
+  // Register a new user
+  const result = await skeletalAuth.register('user@email.com', 'mypassword', 'Alice');
+  // result.user, result.accessToken, result.refreshToken
+
+  // Login
+  const result = await skeletalAuth.login('user@email.com', 'mypassword');
+  localStorage.setItem('token', result.accessToken);
+
+  // Get current user profile
+  const token = localStorage.getItem('token');
+  const { user } = await skeletalAuth.me(token);
+
+  // Logout
+  await skeletalAuth.logout(refreshToken);
+
+  --- OTP ---
+
+  // Send OTP to email
+  await skeletalOTP.send('user@email.com', 'email');
+
+  // Send OTP to phone (Twilio must be configured)
+  await skeletalOTP.send('+1234567890', 'sms');
+
+  // Verify the code the user typed in
+  const { verified } = await skeletalOTP.verify('user@email.com', '482910', 'email');
+  if (verified) { /* proceed */ }
+
+  // Optional: use a purpose tag (e.g. 'password-reset' vs 'signup')
+  await skeletalOTP.send('user@email.com', 'email', 'password-reset');
+  await skeletalOTP.verify('user@email.com', code, 'email', 'password-reset');
+
+  --- WEBHOOKS ---
+
+  // Register a URL to receive events
+  await skeletalWebhooks.register(
+    'https://mysite.com/hooks/incoming',
+    ['order.created', 'payment.done'],
+    'My Receiver'
+  );
+
+  // Trigger an event (fires all registered URLs for that event)
+  await skeletalWebhooks.trigger('order.created', { orderId: 'abc123' }, token);
+
+  // List all registered webhooks
+  const { webhooks } = await skeletalWebhooks.list();
+
+  // Remove a webhook
+  await skeletalWebhooks.remove(webhookId);
+
+  --- CRUD (example model: product) ---
+
+  const token = localStorage.getItem('token');
+
+  // Create
+  await skeletalProduct.create({ name: 'Widget', price: 9.99, inStock: true }, token);
+
+  // List (with pagination and filtering)
+  const { data, total } = await skeletalProduct.list({ page: 1, limit: 10 }, token);
+
+  // Get one
+  const { data } = await skeletalProduct.get('64f...id', token);
+
+  // Update
+  await skeletalProduct.update('64f...id', { price: 12.99 }, token);
+
+  // Delete
+  await skeletalProduct.remove('64f...id', token);
+
+  --- WEBSOCKET (real-time) ---
+
+  // Install socket.io-client in your frontend first:
+  // npm install socket.io-client
+
+  import { io } from 'socket.io-client';
+  const socket = io('http://localhost:3001');
+
+  // Listen for inbound webhook events
+  socket.on('webhook:received', (payload) => {
+    console.log('Event received:', payload.event, payload.data);
+  });
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PART 5: ADDING A NEW CRUD MODEL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Option A — During wizard (npm run setup, answer yes to "Add a CRUD model")
+
+Option B — After setup, without re-running the full wizard:
+  > node cli/index.js add-model
+
+  It will prompt:
+  ? Model name: post
+  ? Fields as JSON: {"title":"String","body":"String","published":"Boolean"}
+  ? Require JWT auth? Yes
+
+  Available field types:
+    String, Number, Boolean, Date, ObjectId, Mixed, Array
+
+  After adding, restart the server:
+  > npm start
+
+  New endpoints are now live:
+    GET    /api/post
+    GET    /api/post/:id
+    POST   /api/post
+    PUT    /api/post/:id
+    DELETE /api/post/:id
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PART 6: CONFIGURING EMAIL (SMTP / GMAIL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For Gmail:
+  1. Go to Google Account > Security > 2-Step Verification > App Passwords
+  2. Create an app password for "Mail"
+  3. Use that 16-character password (NOT your Gmail password) in the wizard
+
+  Host : smtp.gmail.com
+  Port : 587
+  User : youraddress@gmail.com
+  Pass : (the 16-char app password)
+
+For other providers (Outlook, SendGrid, etc.):
+  Check their SMTP settings and enter them in the wizard.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PART 7: CONFIGURING SMS (TWILIO)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. Sign up at twilio.com
+  2. Get a phone number from the Twilio console
+  3. Copy your Account SID and Auth Token from the dashboard
+  4. Enter them in the wizard when prompted for SMS
+
+  Account SID : ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  Auth Token  : your_auth_token
+  From number : +1xxxxxxxxxx (your Twilio number)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PART 8: ENVIRONMENT VARIABLES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Create a .env file in this folder (copy .env.example):
+  PORT=3001
+  MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/dbname
+
+These override the values in skeletal.config.json.
+Useful for production deployments where you don't want secrets in JSON.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PART 9: ALL API ENDPOINTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Base URL: http://localhost:3001/api
+
+  GET  /health                    → server status check
+
+  POST /auth/register             → { email, password, name }
+  POST /auth/login                → { email, password }
+  POST /auth/refresh              → { refreshToken }
+  POST /auth/logout               → { refreshToken }
+  GET  /auth/me                   → header: Authorization: Bearer <token>
+
+  POST /otp/send                  → { target, type, purpose? }
+  POST /otp/verify                → { target, code, type, purpose? }
+
+  POST   /webhooks/register       → { url, events?, label?, secret? }
+  GET    /webhooks                → list all
+  DELETE /webhooks/:id            → remove one
+  POST   /webhooks/trigger        → { event, data }
+  POST   /webhooks/inbound        → receives signed webhook payloads
+
+  GET    /api/<model>             → list (paginated)
+  GET    /api/<model>/:id         → get one
+  POST   /api/<model>             → create
+  PUT    /api/<model>/:id         → update
+  DELETE /api/<model>/:id         → delete
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PART 10: TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  "No skeletal.config.json found"
+    → Run: npm run setup
+
+  "MongoDB connection failed"
+    → Check your MongoDB URI is correct and MongoDB is running
+    → For Atlas, check your IP is whitelisted in Network Access
+
+  OTP email not sending
+    → Make sure you used an App Password (not your real Gmail password)
+    → Check your SMTP host and port settings
+
+  CORS errors in browser
+    → Re-run npm run setup and add your frontend origin
+      (e.g. http://localhost:3000 or https://yoursite.com)
+
+  "Cannot find module" errors
+    → Run: npm install
+
+  skeletal-client.js is out of date
+    → Run: node cli/index.js regen-sdk
+
+========================================================

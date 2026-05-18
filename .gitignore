@@ -1,0 +1,4 @@
+node_modules/
+.env
+skeletal.config.json
+skeletal-client.js
