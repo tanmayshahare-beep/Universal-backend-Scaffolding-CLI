@@ -5,6 +5,15 @@
   // button label is updated after DOM loads — handled below
 })();
 
+// ── Onboarding: show overlay only on first launch ─────────────────────────────
+// Overlay starts hidden (class ob-hidden). Remove it if this is a first visit.
+(function initOnboardingVisibility() {
+  if (!localStorage.getItem('skeletal-onboarded')) {
+    const overlay = document.getElementById('onboarding-overlay');
+    if (overlay) overlay.classList.remove('ob-hidden');
+  }
+})();
+
 // ── State ────────────────────────────────────────────────────────────────────
 const state = {
   frontendPath: '',
@@ -508,4 +517,36 @@ function setStatus(state, msg) {
     populateUI(state.config);
     setStatus('idle', 'Ready — configure your features then click Generate');
   }
+})();
+
+// ── Onboarding overlay interactions ───────────────────────────────────────────
+(function setupOnboarding() {
+  let obPath = '';
+
+  $('ob-btn-browse').addEventListener('click', async () => {
+    const folder = await window.skeletalAPI.openFolder();
+    if (!folder) return;
+    obPath = folder;
+    const display = $('ob-folder-display');
+    display.textContent = folder;
+    display.classList.add('has-path');
+  });
+
+  function dismissOnboarding() {
+    localStorage.setItem('skeletal-onboarded', '1');
+    $('onboarding-overlay').classList.add('ob-hidden');
+  }
+
+  $('ob-btn-skip').addEventListener('click', dismissOnboarding);
+
+  $('ob-btn-start').addEventListener('click', () => {
+    dismissOnboarding();
+    if (obPath) {
+      state.frontendPath = obPath;
+      $('folder-display').textContent = obPath;
+      $('folder-display').classList.remove('dim');
+      $('btn-reveal').style.display = 'inline';
+      setStatus('ok', `Frontend folder set: ${obPath}`);
+    }
+  });
 })();

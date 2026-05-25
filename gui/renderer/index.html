@@ -559,6 +559,79 @@
     </div>
   </footer>
 
+  <!-- ── Onboarding overlay ─────────────────────────────────────
+       Hidden by default. JS removes ob-hidden on first launch.
+  ──────────────────────────────────────────────────────────── -->
+  <div id="onboarding-overlay" class="ob-hidden">
+    <div id="onboarding-card">
+
+      <!-- Header -->
+      <div class="ob-header">
+        <img src="../../ascii-art.png" class="ob-logo" alt="" />
+        <div>
+          <div class="ob-title">skeletal-dock</div>
+          <div class="ob-sub">// backend configurator for frontend projects</div>
+        </div>
+      </div>
+
+      <!-- How it works -->
+      <div class="ob-section">
+        <div class="ob-section-label">How it works</div>
+        <div class="ob-steps">
+          <div class="ob-step">
+            <span class="ob-num">01</span>
+            <span>Select your frontend project folder below</span>
+          </div>
+          <div class="ob-step">
+            <span class="ob-num">02</span>
+            <span>Use the sidebar to toggle backend features ON / OFF and fill in their settings</span>
+          </div>
+          <div class="ob-step">
+            <span class="ob-num">03</span>
+            <span>Click <span class="ob-kw">Generate &amp; Inject SDK</span> — saves <code>skeletal.config.json</code> and copies the client SDK into your frontend</span>
+          </div>
+          <div class="ob-step">
+            <span class="ob-num">04</span>
+            <span>Click <span class="ob-kw">Start Server</span> — your backend is live on the configured port</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- File structure -->
+      <div class="ob-section">
+        <div class="ob-section-label">Accepted frontend structure</div>
+        <div class="ob-tree">
+          <div class="ob-tree-line"><span class="ob-dir">your-frontend/</span><span class="ob-cmt">&nbsp;&nbsp;// React · Vite · Next.js · plain HTML — all work</span></div>
+          <div class="ob-tree-line ob-indent">├── <span class="ob-dir">src/</span><span class="ob-cmt">&nbsp;&nbsp;// SDK is also copied here if this folder exists</span></div>
+          <div class="ob-tree-line ob-indent ob-deep">│&nbsp;&nbsp;&nbsp;└── <span class="ob-file">App.jsx</span><span class="ob-cmt">&nbsp;&nbsp;// your existing files are untouched</span></div>
+          <div class="ob-tree-line ob-indent">├── <span class="ob-dir">public/</span></div>
+          <div class="ob-tree-line ob-indent">├── <span class="ob-file">index.html</span></div>
+          <div class="ob-tree-line ob-indent ob-injected">└── <span class="ob-file ob-str">skeletal-client.js</span><span class="ob-cmt">&nbsp;&nbsp;// ← auto-injected here on Generate</span></div>
+        </div>
+        <div class="ob-note">
+          Import the SDK anywhere in your app:
+          <code>import SkeletalDock from './skeletal-client.js'</code>
+        </div>
+      </div>
+
+      <!-- Folder picker -->
+      <div class="ob-section">
+        <div class="ob-section-label">Select your frontend folder <span class="ob-optional">(optional — you can set this later)</span></div>
+        <div class="ob-folder-row">
+          <div id="ob-folder-display" class="ob-folder-display">// no folder selected</div>
+          <button id="ob-btn-browse" class="btn-secondary btn-sm">browse</button>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="ob-actions">
+        <button id="ob-btn-skip" class="btn-ghost">Skip for now</button>
+        <button id="ob-btn-start" class="btn-primary">Get Started</button>
+      </div>
+
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>
