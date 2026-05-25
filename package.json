@@ -2,7 +2,7 @@
   "name": "skeletal-dock",
   "version": "1.0.0",
   "description": "Universal backend scaffold with CLI configurator",
-  "main": "start.js",
+  "main": "gui/main.js",
   "bin": {
     "skeletal": "./cli/index.js"
   },
@@ -12,7 +12,37 @@
     "status": "node cli/index.js status",
     "add-model": "node cli/index.js add-model",
     "demo:setup": "node demo/setup-demo.js",
-    "demo": "node demo/server.js"
+    "demo": "node demo/server.js",
+    "gui": "electron gui/main.js",
+    "package": "electron-builder --win --x64"
+  },
+  "build": {
+    "appId": "com.skeletaldock.app",
+    "productName": "Skeletal Dock",
+    "copyright": "Made with love and Claude",
+    "asar": false,
+    "forceCodeSigning": false,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!dist/**",
+      "!.git/**",
+      "!.claude/**",
+      "!*.md",
+      "!INSTRUCTIONS.txt"
+    ],
+    "win": {
+      "target": "portable",
+      "icon": "ascii-art.png",
+      "artifactName": "SkeltalDock.exe",
+      "signAndEditExecutable": false
+    }
+  },
+  "devDependencies": {
+    "electron": "^29.4.6",
+    "electron-builder": "^24.13.3"
   },
   "dependencies": {
     "axios": "^1.6.0",

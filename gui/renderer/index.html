@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' file: data:">
+  <title>Skeletal Dock</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ── SVG sprite ────────────────────────────────────────────────────────────
+     Every element has explicit fill/stroke so CSS cascade can't break them.
+     Stroke-only shapes: fill="none" stroke="currentColor"
+     Filled shapes:      fill="currentColor" stroke="none"
+     currentColor = the parent's CSS `color`, which flips with the theme.
+────────────────────────────────────────────────────────────────────────── -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+
+  <!-- folder -->
+  <symbol id="icon-project" viewBox="0 0 16 16">
+    <path d="M1 5h4.5l1.5 1.5H15V13H1z"
+          fill="none" stroke="currentColor" stroke-width="1.5"
+          stroke-linejoin="round" stroke-linecap="round"/>
+  </symbol>
+
+  <!-- padlock: outline body + arc + filled dot keyhole -->
+  <symbol id="icon-auth" viewBox="0 0 16 16">
+    <rect x="3" y="8" width="10" height="7" rx="1"
+          fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M5 8V6a3 3 0 0 1 6 0v2"
+          fill="none" stroke="currentColor" stroke-width="1.5"
+          stroke-linecap="round"/>
+    <circle cx="8" cy="12" r="1.5"
+            fill="currentColor" stroke="none"/>
+  </symbol>
+
+  <!-- envelope -->
+  <symbol id="icon-otp" viewBox="0 0 16 16">
+    <rect x="1" y="4" width="14" height="10" rx="1"
+          fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M1 5l7 5.5L15 5"
+          fill="none" stroke="currentColor" stroke-width="1.5"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+
+  <!-- chain link -->
+  <symbol id="icon-webhooks" viewBox="0 0 16 16">
+    <path d="M9 7l1-1a2.83 2.83 0 0 1 4 4l-2 2a2.83 2.83 0 0 1-4 0"
+          fill="none" stroke="currentColor" stroke-width="1.5"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M7 9l-1 1a2.83 2.83 0 0 1-4-4l2-2a2.83 2.83 0 0 1 4 0"
+          fill="none" stroke="currentColor" stroke-width="1.5"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="6" y1="10" x2="10" y2="6"
+          stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+
+  <!-- database -->
+  <symbol id="icon-crud" viewBox="0 0 16 16">
+    <ellipse cx="8" cy="4" rx="6" ry="2"
+             fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M2 4v4c0 1.1 2.7 2 6 2s6-.9 6-2V4"
+          fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M2 8v4c0 1.1 2.7 2 6 2s6-.9 6-2V8"
+          fill="none" stroke="currentColor" stroke-width="1.5"/>
+  </symbol>
+
+  <!-- ascending bars (filled rects — no stroke needed) -->
+  <symbol id="icon-rateLimit" viewBox="0 0 16 16">
+    <rect x="1"    y="9" width="3.5" height="6"  rx="0.5" fill="currentColor" stroke="none"/>
+    <rect x="6.25" y="5" width="3.5" height="10" rx="0.5" fill="currentColor" stroke="none"/>
+    <rect x="11.5" y="1" width="3.5" height="14" rx="0.5" fill="currentColor" stroke="none"/>
+  </symbol>
+
+  <!-- upload arrow + tray -->
+  <symbol id="icon-uploads" viewBox="0 0 16 16">
+    <path d="M8 11V2M5 5l3-3 3 3"
+          fill="none" stroke="currentColor" stroke-width="1.5"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M2 13v2h12v-2"
+          fill="none" stroke="currentColor" stroke-width="1.5"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+
+  <!-- log lines -->
+  <symbol id="icon-logging" viewBox="0 0 16 16">
+    <path d="M2 4h12M2 8h12M2 12h8"
+          fill="none" stroke="currentColor" stroke-width="1.5"
+          stroke-linecap="round"/>
+  </symbol>
+
+  <!-- lightning bolt (filled) -->
+  <symbol id="icon-websocket" viewBox="0 0 16 16">
+    <path d="M9.5 1L4 9h5.5L7 15l6.5-8H8z"
+          fill="currentColor" stroke="none"/>
+  </symbol>
+
+  <!-- email (same as OTP envelope) -->
+  <symbol id="icon-email" viewBox="0 0 16 16">
+    <rect x="1" y="4" width="14" height="10" rx="1"
+          fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M1 5l7 5.5L15 5"
+          fill="none" stroke="currentColor" stroke-width="1.5"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+
+  <!-- phone -->
+  <symbol id="icon-sms" viewBox="0 0 16 16">
+    <rect x="4" y="1" width="8" height="14" rx="2"
+          fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M7 13h2"
+          fill="none" stroke="currentColor" stroke-width="1.5"
+          stroke-linecap="round"/>
+  </symbol>
+
+  <!-- deploy up-arrow + baseline (generate button) -->
+  <symbol id="icon-generate" viewBox="0 0 16 16">
+    <path d="M8 13V3M4 7l4-4 4 4"
+          fill="none" stroke="currentColor" stroke-width="1.5"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M2 14h12"
+          fill="none" stroke="currentColor" stroke-width="1.5"
+          stroke-linecap="round"/>
+  </symbol>
+
+  <!-- play triangle (start server) -->
+  <symbol id="icon-start" viewBox="0 0 16 16">
+    <path d="M4 2l9 6-9 6z"
+          fill="currentColor" stroke="none"/>
+  </symbol>
+
+</svg>
+
+  <!-- ── Top bar ─────────────────────────────────────────────────── -->
+  <header id="topbar">
+    <div id="brand">
+      <img src="../../ascii-art.png" class="brand-logo" alt="" />
+      <span class="brand-name">skeletal-dock</span>
+      <span class="brand-sub">// backend configurator</span>
+    </div>
+    <div id="topbar-right">
+      <div id="folder-row">
+        <div id="folder-display" class="folder-path dim">// no frontend folder selected</div>
+        <button id="btn-browse" class="btn-secondary btn-sm">browse</button>
+        <button id="btn-reveal" class="btn-icon" title="Open in Explorer" style="display:none">↗</button>
+      </div>
+      <button id="btn-theme">[light mode]</button>
+    </div>
+  </header>
+
+  <!-- ── Body ────────────────────────────────────────────────────── -->
+  <div id="layout">
+
+    <!-- Sidebar -->
+    <nav id="sidebar">
+      <div class="sidebar-section-label">GENERAL</div>
+      <button class="nav-item active" data-panel="project">
+        <svg class="icon nav-icon"><use href="#icon-project"/></svg> Project
+      </button>
+
+      <div class="sidebar-section-label">FEATURES</div>
+      <button class="nav-item" data-panel="auth">
+        <svg class="icon nav-icon"><use href="#icon-auth"/></svg> Auth
+        <span class="badge badge-on" id="badge-auth">ON</span>
+      </button>
+      <button class="nav-item" data-panel="otp">
+        <svg class="icon nav-icon"><use href="#icon-otp"/></svg> OTP
+        <span class="badge badge-off" id="badge-otp">OFF</span>
+      </button>
+      <button class="nav-item" data-panel="webhooks">
+        <svg class="icon nav-icon"><use href="#icon-webhooks"/></svg> Webhooks
+        <span class="badge badge-on" id="badge-webhooks">ON</span>
+      </button>
+      <button class="nav-item" data-panel="crud">
+        <svg class="icon nav-icon"><use href="#icon-crud"/></svg> CRUD
+        <span class="badge badge-on" id="badge-crud">ON</span>
+      </button>
+      <button class="nav-item" data-panel="rateLimit">
+        <svg class="icon nav-icon"><use href="#icon-rateLimit"/></svg> Rate Limit
+        <span class="badge badge-off" id="badge-rateLimit">OFF</span>
+      </button>
+      <button class="nav-item" data-panel="uploads">
+        <svg class="icon nav-icon"><use href="#icon-uploads"/></svg> Uploads
+        <span class="badge badge-off" id="badge-uploads">OFF</span>
+      </button>
+      <button class="nav-item" data-panel="logging">
+        <svg class="icon nav-icon"><use href="#icon-logging"/></svg> Logging
+        <span class="badge badge-off" id="badge-logging">OFF</span>
+      </button>
+      <button class="nav-item" data-panel="websocket">
+        <svg class="icon nav-icon"><use href="#icon-websocket"/></svg> WebSocket
+        <span class="badge badge-on" id="badge-websocket">ON</span>
+      </button>
+    </nav>
+
+    <!-- Main panel -->
+    <main id="content">
+
+      <!-- ── Project ── -->
+      <section class="panel active" id="panel-project">
+        <h2 class="panel-title">
+          <svg class="icon"><use href="#icon-project"/></svg> Project Settings
+        </h2>
+        <div class="field-group">
+          <label>Project Name</label>
+          <input type="text" id="proj-name" placeholder="my-app" />
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label>Backend Port</label>
+            <input type="number" id="proj-port" placeholder="3001" min="1" max="65535" />
+          </div>
+          <div class="field-group flex-2">
+            <label>MongoDB URI</label>
+            <input type="text" id="proj-mongo" placeholder="mongodb://localhost:27017/my-app" />
+          </div>
+        </div>
+        <div class="field-group">
+          <label>CORS Origins <span class="hint">(comma-separated)</span></label>
+          <input type="text" id="proj-cors" placeholder="http://localhost:3000, https://myapp.com" />
+        </div>
+      </section>
+
+      <!-- ── Auth ── -->
+      <section class="panel" id="panel-auth">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <svg class="icon"><use href="#icon-auth"/></svg> Auth — JWT + Password Reset
+          </h2>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="auth-enabled" class="feature-toggle" data-feature="auth" />
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
+        </div>
+        <div class="feature-body" id="body-auth">
+          <div class="field-group">
+            <label>JWT Secret <span class="hint">(leave blank to auto-generate)</span></label>
+            <div class="input-row">
+              <input type="text" id="auth-secret" placeholder="auto-generate" />
+              <button class="btn-secondary btn-sm" id="btn-gen-jwt">Generate</button>
+            </div>
+          </div>
+          <div class="field-group">
+            <label>Token Expiry</label>
+            <select id="auth-expiry">
+              <option value="1h">1 hour</option>
+              <option value="6h">6 hours</option>
+              <option value="1d">1 day</option>
+              <option value="7d" selected>7 days</option>
+              <option value="30d">30 days</option>
+            </select>
+          </div>
+          <div class="info-box">
+            Routes: POST /api/auth/register · login · logout · refresh · me · forgot-password · reset-password
+          </div>
+        </div>
+      </section>
+
+      <!-- ── OTP ── -->
+      <section class="panel" id="panel-otp">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <svg class="icon"><use href="#icon-otp"/></svg> OTP — One-Time Codes
+          </h2>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="otp-enabled" class="feature-toggle" data-feature="otp" />
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
+        </div>
+        <div class="feature-body" id="body-otp">
+          <div class="field-row">
+            <div class="field-group">
+              <label>Code Length</label>
+              <input type="number" id="otp-length" min="4" max="10" value="6" />
+            </div>
+            <div class="field-group">
+              <label>Expiry (seconds)</label>
+              <input type="number" id="otp-expiry" min="60" max="3600" value="300" />
+            </div>
+          </div>
+
+          <div class="sub-card">
+            <div class="sub-card-header">
+              <span>
+                <svg class="icon"><use href="#icon-email"/></svg> Email Channel
+              </span>
+              <label class="toggle-wrap sm">
+                <input type="checkbox" id="otp-email-enabled" checked />
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              </label>
+            </div>
+            <div id="otp-email-body">
+              <div class="field-group">
+                <label>Provider</label>
+                <select id="otp-email-provider">
+                  <option value="gmail">Gmail App Password</option>
+                  <option value="smtp">Custom SMTP</option>
+                </select>
+              </div>
+              <div id="otp-gmail-fields">
+                <div class="field-group">
+                  <label>Gmail Address</label>
+                  <input type="email" id="otp-gmail-user" placeholder="you@gmail.com" />
+                </div>
+                <div class="field-group">
+                  <label>App Password <span class="hint">(16 chars from Google account)</span></label>
+                  <input type="password" id="otp-gmail-pass" placeholder="xxxx xxxx xxxx xxxx" />
+                </div>
+              </div>
+              <div id="otp-smtp-fields" style="display:none">
+                <div class="field-row">
+                  <div class="field-group flex-2">
+                    <label>SMTP Host</label>
+                    <input type="text" id="otp-smtp-host" placeholder="smtp.example.com" />
+                  </div>
+                  <div class="field-group">
+                    <label>Port</label>
+                    <input type="number" id="otp-smtp-port" value="587" />
+                  </div>
+                </div>
+                <div class="field-row">
+                  <div class="field-group">
+                    <label>User</label>
+                    <input type="email" id="otp-smtp-user" placeholder="user@example.com" />
+                  </div>
+                  <div class="field-group">
+                    <label>Password</label>
+                    <input type="password" id="otp-smtp-pass" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sub-card">
+            <div class="sub-card-header">
+              <span>
+                <svg class="icon"><use href="#icon-sms"/></svg> SMS Channel (Twilio)
+              </span>
+              <label class="toggle-wrap sm">
+                <input type="checkbox" id="otp-sms-enabled" />
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              </label>
+            </div>
+            <div id="otp-sms-body" style="display:none">
+              <div class="field-group">
+                <label>Account SID</label>
+                <input type="text" id="otp-sms-sid" placeholder="ACxxxxxxxx" />
+              </div>
+              <div class="field-group">
+                <label>Auth Token</label>
+                <input type="password" id="otp-sms-token" />
+              </div>
+              <div class="field-group">
+                <label>From Number</label>
+                <input type="text" id="otp-sms-from" placeholder="+15551234567" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Webhooks ── -->
+      <section class="panel" id="panel-webhooks">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <svg class="icon"><use href="#icon-webhooks"/></svg> Webhooks
+          </h2>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="webhooks-enabled" class="feature-toggle" data-feature="webhooks" />
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
+        </div>
+        <div class="feature-body" id="body-webhooks">
+          <div class="field-group">
+            <label>Signing Secret <span class="hint">(HMAC-SHA256, leave blank to auto-generate)</span></label>
+            <div class="input-row">
+              <input type="text" id="webhooks-secret" placeholder="auto-generate" />
+              <button class="btn-secondary btn-sm" id="btn-gen-webhook">Generate</button>
+            </div>
+          </div>
+          <div class="info-box">
+            Routes: POST /register · GET / · DELETE /:id · POST /trigger · POST /inbound
+          </div>
+        </div>
+      </section>
+
+      <!-- ── CRUD ── -->
+      <section class="panel" id="panel-crud">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <svg class="icon"><use href="#icon-crud"/></svg> Auto CRUD
+          </h2>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="crud-enabled" class="feature-toggle" data-feature="crud" />
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
+        </div>
+        <div class="feature-body" id="body-crud">
+          <div id="model-list"></div>
+          <button class="btn-add" id="btn-add-model">+ Add Model</button>
+
+          <!-- Inline model editor -->
+          <div id="model-editor" class="model-editor" style="display:none">
+            <h3 id="editor-title">New Model</h3>
+            <div class="field-row">
+              <div class="field-group">
+                <label>Model Name</label>
+                <input type="text" id="me-name" placeholder="product" />
+              </div>
+              <div class="field-group">
+                <label>Roles <span class="hint">(comma-sep, blank = any auth user)</span></label>
+                <input type="text" id="me-roles" placeholder="admin, editor" />
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="check-label">
+                <input type="checkbox" id="me-auth" checked /> Require JWT auth
+              </label>
+              <label class="check-label">
+                <input type="checkbox" id="me-soft" /> Soft delete
+              </label>
+            </div>
+
+            <div class="fields-table-wrap">
+              <div class="fields-table-header">
+                <span>Field Name</span><span>Type</span><span>Required</span><span>Min</span><span>Max</span><span>Enum values</span><span></span>
+              </div>
+              <div id="fields-rows"></div>
+            </div>
+            <button class="btn-secondary btn-sm" id="btn-add-field">+ Add Field</button>
+
+            <div class="editor-actions">
+              <button class="btn-primary" id="btn-save-model">Save Model</button>
+              <button class="btn-ghost" id="btn-cancel-model">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Rate Limit ── -->
+      <section class="panel" id="panel-rateLimit">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <svg class="icon"><use href="#icon-rateLimit"/></svg> Rate Limiting
+          </h2>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="rateLimit-enabled" class="feature-toggle" data-feature="rateLimit" />
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
+        </div>
+        <div class="feature-body" id="body-rateLimit">
+          <div class="field-row">
+            <div class="field-group">
+              <label>Global max requests <span class="hint">per 15 min</span></label>
+              <input type="number" id="rl-global" value="100" min="1" />
+            </div>
+            <div class="field-group">
+              <label>Auth routes max <span class="hint">per 15 min</span></label>
+              <input type="number" id="rl-auth" value="20" min="1" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Uploads ── -->
+      <section class="panel" id="panel-uploads">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <svg class="icon"><use href="#icon-uploads"/></svg> File Uploads
+          </h2>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="uploads-enabled" class="feature-toggle" data-feature="uploads" />
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
+        </div>
+        <div class="feature-body" id="body-uploads">
+          <div class="field-row">
+            <div class="field-group flex-2">
+              <label>Upload Directory</label>
+              <input type="text" id="up-dest" value="uploads/" />
+            </div>
+            <div class="field-group">
+              <label>Max File Size (MB)</label>
+              <input type="number" id="up-size" value="5" min="1" max="100" />
+            </div>
+          </div>
+          <label class="check-label">
+            <input type="checkbox" id="up-auth" checked /> Require JWT auth for uploads
+          </label>
+          <div class="info-box">
+            Routes: POST /api/uploads/single · POST /api/uploads/multiple · GET /uploads/:filename
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Logging ── -->
+      <section class="panel" id="panel-logging">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <svg class="icon"><use href="#icon-logging"/></svg> Request Logging
+          </h2>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="logging-enabled" class="feature-toggle" data-feature="logging" />
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
+        </div>
+        <div class="feature-body" id="body-logging">
+          <div class="field-group">
+            <label>Log Format</label>
+            <div class="radio-group">
+              <label class="radio-label"><input type="radio" name="log-fmt" value="dev" checked /> dev <span class="hint">— colored, short</span></label>
+              <label class="radio-label"><input type="radio" name="log-fmt" value="combined" /> combined <span class="hint">— Apache combined</span></label>
+              <label class="radio-label"><input type="radio" name="log-fmt" value="tiny" /> tiny <span class="hint">— minimal</span></label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── WebSocket ── -->
+      <section class="panel" id="panel-websocket">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <svg class="icon"><use href="#icon-websocket"/></svg> WebSocket — Socket.io
+          </h2>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="websocket-enabled" class="feature-toggle" data-feature="websocket" />
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
+        </div>
+        <div class="feature-body" id="body-websocket">
+          <div class="info-box">
+            Enables a Socket.io layer on the same port. Webhook triggers are broadcast in real time as <code>webhook:received</code> events.
+            <br><br>
+            <strong>Frontend usage:</strong><br>
+            <code>import {'{'} io {'}'} from 'socket.io-client';</code><br>
+            <code>const socket = io('http://localhost:PORT');</code><br>
+            <code>socket.on('webhook:received', data => console.log(data));</code>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ── Footer / Generate bar ──────────────────────────────────── -->
+  <footer id="footbar">
+    <div id="status-line">
+      <span id="status-dot" class="dot dot-idle"></span>
+      <span id="status-text">Ready — configure your features then click Generate</span>
+    </div>
+    <div class="footer-actions">
+      <button id="btn-start-server" class="btn-secondary">
+        <svg class="icon"><use href="#icon-start"/></svg> Start Server
+      </button>
+      <button id="btn-generate" class="btn-primary">
+        <svg class="icon"><use href="#icon-generate"/></svg> Generate &amp; Inject SDK
+      </button>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

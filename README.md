@@ -1,6 +1,6 @@
 # skeletal-dock
 
-A universal backend scaffold you drop into any project. Run one wizard in the terminal, get a fully configured Express + MongoDB + Socket.io backend — plus a ready-to-use frontend SDK.
+A universal backend scaffold you drop into any project. Configure it with a **desktop GUI wizard** or a terminal wizard, get a fully configured Express + MongoDB + Socket.io backend — plus a ready-to-use frontend SDK auto-injected into your project.
 
 > Made with love and Claude.
 
@@ -27,8 +27,29 @@ A universal backend scaffold you drop into any project. Run one wizard in the te
 
 ## Quick Start
 
+### Option A — GUI Wizard (recommended)
+
 ```bash
 # 1. Install dependencies (once)
+npm install
+
+# 2. Open the desktop configurator
+npm run gui
+```
+
+The GUI lets you:
+- Toggle backend features on/off from a sidebar
+- Configure each feature's settings in its own panel
+- Point it at your frontend folder — the SDK is copied there automatically
+- Click **Generate** to write `skeletal.config.json` and `skeletal-client.js`
+- Click **Start Server** to launch the backend without leaving the app
+
+The interface uses a pure black / pure white theme (toggle in the top-right corner) with Python-style syntax colours for values, types, and state indicators.
+
+### Option B — Terminal Wizard
+
+```bash
+# 1. Install dependencies
 npm install
 
 # 2. Run the setup wizard
@@ -57,24 +78,25 @@ npm start
 npm run demo
 ```
 
-Then open **http://localhost:3000**. The demo covers every module: auth, OTP, webhooks, CRUD, file uploads, password reset, and real-time WebSocket events. It has a dark/light mode toggle.
+Then open **http://localhost:3000**. The demo covers every module: auth, OTP, webhooks, CRUD, file uploads, password reset, and real-time WebSocket events.
 
 ---
 
 ## Using in a New Project
 
 1. Copy this entire `skeletal-dock` folder into your project directory (or run it as a shared service)
-2. `cd` into it and run `npm run setup`
-3. `npm start` — backend is live
-4. Copy the generated `skeletal-client.js` into your frontend source folder
-5. Import and use it — no extra setup needed
+2. `cd` into it and run `npm run gui` (or `npm run setup` for the CLI wizard)
+3. In the GUI: browse to your frontend folder, configure features, click Generate
+4. `npm start` — backend is live
+5. `skeletal-client.js` is already in your frontend folder — import and use it
 
 ---
 
 ## CLI Commands
 
 ```bash
-npm run setup                      # Full wizard: configure everything from scratch
+npm run gui                        # Open the desktop GUI configurator
+npm run setup                      # Full terminal wizard: configure everything from scratch
 npm start                          # Start the backend server
 npm run demo:setup                 # Create a demo config (skeletal-demo project)
 npm run demo                       # Start the demo UI on port 3000
@@ -143,7 +165,7 @@ POST   /api/<model>/:id/restore  (soft delete models only)
 
 ## Frontend SDK Usage
 
-After `npm run setup`, a `skeletal-client.js` is generated. Copy it into your frontend.
+After running the wizard or clicking Generate in the GUI, `skeletal-client.js` is ready in your frontend folder.
 
 ```js
 import { skeletalAuth, skeletalOTP, skeletalWebhooks, skeletalUploads, skeletalProduct } from './skeletal-client.js';
@@ -191,7 +213,7 @@ socket.on('webhook:received', (payload) => console.log(payload));
 
 ## Configuration File
 
-`skeletal.config.json` is created by the wizard. You can edit it manually and restart the server.
+`skeletal.config.json` is created by the wizard or the GUI. You can edit it manually and restart the server.
 
 ```json
 {
@@ -278,9 +300,7 @@ To use Gmail for OTP and password-reset emails:
 1. Go to **myaccount.google.com/security**
 2. Enable **2-Step Verification**
 3. Search **App passwords** → create one → copy the 16-character code
-4. In the wizard, choose **Gmail App Password** and enter your Gmail address + the 16-char code
-
-The wizard (and `demo:setup`) handles the SMTP settings automatically — you only need the email address and app password.
+4. In the wizard (GUI or CLI), choose **Gmail App Password** and enter your Gmail address + the 16-char code
 
 ---
 
@@ -288,9 +308,16 @@ The wizard (and `demo:setup`) handles the SMTP settings automatically — you on
 
 ```
 skeletal-dock/
+├── gui/
+│   ├── main.js            Electron main process (window, IPC handlers)
+│   ├── preload.js         Context bridge (renderer ↔ main)
+│   └── renderer/
+│       ├── index.html     GUI shell
+│       ├── styles.css     Minimalist theme (dark / light, Python syntax colours)
+│       └── app.js         UI logic, state, theme toggle
 ├── cli/
 │   ├── index.js           CLI entry point
-│   └── wizard.js          Interactive setup wizard
+│   └── wizard.js          Interactive terminal setup wizard
 ├── core/
 │   ├── server.js          Express + Socket.io setup
 │   ├── db.js              MongoDB connection
@@ -310,8 +337,8 @@ skeletal-dock/
 │   ├── server.js          Serves demo UI on port 3000
 │   └── setup-demo.js      Creates a demo skeletal.config.json
 ├── start.js               Server entry point
-├── skeletal.config.json   Your config (created by wizard)
-└── skeletal-client.js     Frontend SDK (generated by wizard)
+├── skeletal.config.json   Your config (created by wizard or GUI)
+└── skeletal-client.js     Frontend SDK (generated by wizard or GUI)
 ```
 
 ---
@@ -338,12 +365,13 @@ function verifySignature(body, secret, signature) {
 
 | Problem | Fix |
 |---|---|
-| `No skeletal.config.json found` | Run `npm run setup` |
+| `No skeletal.config.json found` | Run `npm run gui` or `npm run setup` |
 | `MongoDB connection failed` | Check your URI; for Atlas, whitelist your IP |
 | OTP email not sending | Use a Gmail App Password, not your real password |
 | CORS errors | Re-run setup and add your frontend origin |
 | `Cannot find module` | Run `npm install` |
-| `skeletal-client.js` is outdated | Run `node cli/index.js regen-sdk` |
+| `skeletal-client.js` is outdated | Click Generate in the GUI, or run `node cli/index.js regen-sdk` |
 | Rate limit errors in testing | Increase `globalMax` / `authMax` in config, or disable `rateLimit` |
 | Upload fails with "destination does not exist" | Restart the server — the folder is created on startup |
 | Password reset token not in response | Set `NODE_ENV=production` to hide it, or leave unset for dev |
+| GUI won't open | Run `npm install` first; requires Electron (installed as devDependency) |

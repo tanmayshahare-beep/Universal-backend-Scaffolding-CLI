@@ -11,7 +11,33 @@ Step 1 — Install dependencies
   Open a terminal IN THE SKELETAL-DOCK FOLDER and run:
   > npm install
 
-Step 2 — Run the setup wizard
+Step 2 — Configure your backend (choose one method)
+
+  METHOD A — Desktop GUI Wizard (recommended)
+  ─────────────────────────────────────────────
+  > npm run gui
+
+  A desktop window opens. On the left sidebar, click any
+  feature to open its settings. Use the toggle switch on
+  each feature panel to enable or disable it.
+
+  Top bar:
+    "browse" — pick your frontend project folder.
+               The SDK will be auto-copied there on Generate.
+
+  When you are done:
+    Click  [ Generate & Inject SDK ]  at the bottom.
+    This writes skeletal.config.json and skeletal-client.js,
+    and copies the SDK into your frontend folder.
+
+  Then click  [ Start Server ]  to launch the backend,
+  or run:  npm start  in a separate terminal.
+
+  Theme: click [light mode] / [dark mode] in the top-right
+  corner to switch between pure-black and pure-white themes.
+
+  METHOD B — Terminal Wizard
+  ──────────────────────────
   > npm run setup
 
   The wizard will ask you:
@@ -59,8 +85,7 @@ A browser-based tester is included that covers every feature.
   skeletal-dock folder, not from your home directory.
 
   The demo UI has tabs for: Health, Auth, OTP, Webhooks,
-  CRUD, Uploads, WebSocket. It has a dark/light mode toggle
-  in the top-right corner.
+  CRUD, Uploads, WebSocket.
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -72,24 +97,34 @@ A browser-based tester is included that covers every feature.
 
   2. Open a terminal in the skeletal-dock folder
 
-  3. Run the wizard for THIS project:
-     > npm run setup
+  3. Open the GUI for THIS project:
+     > npm run gui
 
-  4. Start the backend:
+     In the GUI:
+     - Click "browse" and select your frontend project folder
+     - Toggle and configure features on the left sidebar
+     - Click [ Generate & Inject SDK ] when ready
+     - Click [ Start Server ] to launch
+
+  4. Or use the terminal wizard instead:
+     > npm run setup
      > npm start
 
-  5. Copy "skeletal-client.js" into your frontend source folder
-
-  6. Import it in your frontend code and use it
+  5. skeletal-client.js is now in your frontend folder.
+     Import it in your frontend code and use it.
      (see PART 5 below for examples)
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 4: TERMINAL COMMANDS REFERENCE
+  PART 4: COMMAND REFERENCE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+  npm run gui
+    Opens the desktop GUI configurator window.
+    Requires Electron (installed via npm install).
+
   npm run setup
-    Runs the full interactive wizard.
+    Runs the full interactive terminal wizard.
     Use this for a new project or to change settings.
 
   npm start
@@ -128,7 +163,8 @@ A browser-based tester is included that covers every feature.
 
   node cli/index.js regen-sdk
     Regenerates skeletal-client.js from the current config.
-    Run this any time you change the config.
+    Run this any time you change the config manually.
+    (The GUI does this automatically on Generate.)
 
   node cli/index.js --help
     Lists all available commands.
@@ -138,7 +174,8 @@ A browser-based tester is included that covers every feature.
   PART 5: FRONTEND SDK USAGE EXAMPLES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Copy skeletal-client.js into your frontend, then:
+After Generate (GUI) or npm run setup (CLI), skeletal-client.js
+is in your frontend folder. Import and use it:
 
   --- AUTH ---
 
@@ -237,8 +274,11 @@ Copy skeletal-client.js into your frontend, then:
   // Delete (soft delete: marks as deleted, does not remove)
   await skeletalProduct.remove('64f...id', token);
 
-  // Restore a soft-deleted record (call the API directly — no SDK method)
-  await fetch('/api/product/64f...id/restore', { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
+  // Restore a soft-deleted record
+  await fetch('/api/product/64f...id/restore', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + token }
+  });
 
   --- WEBSOCKET (real-time) ---
 
@@ -255,12 +295,62 @@ Copy skeletal-client.js into your frontend, then:
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 6: ADDING A NEW CRUD MODEL
+  PART 6: USING THE GUI — FEATURE PANELS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Option A — During wizard (npm run setup)
+  Launch with:  npm run gui
 
-Option B — After setup, without re-running the full wizard:
+  TOP BAR
+  ────────
+  skeletal-dock              // backend configurator
+  [browse]                   Pick your frontend project folder.
+                             skeletal-client.js is copied there on Generate.
+  [light mode] / [dark mode] Toggle theme (saved between sessions).
+
+  SIDEBAR  (left column)
+  ───────────────────────
+  Click any item to open its settings panel.
+  ON / OFF badges show the current state of each feature.
+
+  SETTINGS PANELS  (right area)
+  ──────────────────────────────
+  Project    — name, port, MongoDB URI, CORS origins
+  Auth       — toggle, JWT secret (or auto-generate), token expiry
+  OTP        — toggle, code length, expiry, Gmail or SMTP, Twilio SMS
+  Webhooks   — toggle, signing secret (or auto-generate)
+  CRUD       — toggle, model builder (add / edit / delete models)
+  Rate Limit — toggle, global max, auth routes max (per 15 min)
+  Uploads    — toggle, destination folder, max MB, auth required
+  Logging    — toggle, format (dev / combined / tiny)
+  WebSocket  — toggle
+
+  CRUD MODEL BUILDER
+  ───────────────────
+  Click [ + Add Model ] to define a new model.
+  Fields are displayed as code lines, e.g.:
+    const product = { name:String, price:Number, inStock:Boolean }
+  Each model supports: auth required, role restrictions, soft delete.
+
+  FOOTER
+  ───────
+  [ Start Server ]         — launches node start.js in background
+  [ Generate & Inject SDK ]— writes config, generates SDK, copies to frontend
+  Status dot shows:
+    orange (pulsing) = working
+    green  = success
+    red    = error
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PART 7: ADDING A NEW CRUD MODEL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Option A — GUI
+  Open the CRUD panel, click [ + Add Model ], fill in the
+  field table, set auth/roles/soft-delete, click Save Model.
+  Then click [ Generate & Inject SDK ] to apply.
+
+Option B — Terminal (without re-running the full wizard):
   > node cli/index.js add-model
 
   It will prompt:
@@ -293,13 +383,13 @@ Option B — After setup, without re-running the full wizard:
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 7: ROLE-BASED ACCESS CONTROL (RBAC)
+  PART 8: ROLE-BASED ACCESS CONTROL (RBAC)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   Users are created with role: "user" by default.
 
   To restrict a CRUD model to specific roles, set "roles"
-  in the model config:
+  in the model config (GUI: Roles field in the model editor):
 
     { "name": "report", "fields": {...}, "auth": true, "roles": ["admin"] }
 
@@ -309,14 +399,12 @@ Option B — After setup, without re-running the full wizard:
   MongoDB directly:
     db.users.updateOne({ email: "you@example.com" }, { $set: { role: "admin" } })
 
-  Or build an admin endpoint in your own application code.
-
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 8: SOFT DELETE
+  PART 9: SOFT DELETE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Enable per model:
+  Enable per model in the GUI (soft delete checkbox) or in config:
     { "name": "post", "fields": {...}, "softDelete": true }
 
   How it works:
@@ -331,16 +419,14 @@ Option B — After setup, without re-running the full wizard:
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 9: FILE UPLOADS
+  PART 10: FILE UPLOADS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Enable in the wizard or set in config:
+  Enable in the GUI (Uploads panel) or set in config:
     "uploads": {
       "enabled": true,
       "destination": "uploads/",
       "maxSizeMb": 5,
-      "maxFiles": 10,
-      "allowedTypes": ["image/jpeg", "image/png", "application/pdf"],
       "auth": true
     }
 
@@ -354,14 +440,12 @@ Option B — After setup, without re-running the full wizard:
   The uploads folder is created automatically on server start.
   If "auth" is true, a valid JWT token is required to upload.
 
-  Leave "allowedTypes" out of the config to allow any file type.
-
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 10: RATE LIMITING
+  PART 11: RATE LIMITING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Enable in the wizard or set in config:
+  Enable in the GUI (Rate Limit panel) or set in config:
     "rateLimit": {
       "enabled": true,
       "globalMax": 100,
@@ -378,11 +462,11 @@ Option B — After setup, without re-running the full wizard:
     429 { "error": "Too many requests, please try again later." }
 
   If you hit rate limits during development, increase the
-  limits in skeletal.config.json and restart the server.
+  limits in the GUI or in skeletal.config.json and restart.
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 11: CONFIGURING EMAIL (GMAIL APP PASSWORD)
+  PART 12: CONFIGURING EMAIL (GMAIL APP PASSWORD)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   Gmail is the easiest option — no SMTP server knowledge needed.
@@ -392,7 +476,10 @@ Option B — After setup, without re-running the full wizard:
   3. Search "App passwords" → create one → copy the 16-char code
      (spaces in the code are fine, they are ignored automatically)
 
-  In the wizard, choose "Gmail App Password" when asked
+  In the GUI: go to OTP panel → Email Channel → select Gmail App Password.
+  Enter your Gmail address and the 16-character code.
+
+  In the terminal wizard: choose "Gmail App Password" when asked
   for the email provider. Enter:
     Gmail address : youraddress@gmail.com
     App Password  : the 16-character code
@@ -402,15 +489,11 @@ Option B — After setup, without re-running the full wizard:
   - Password reset emails
 
   For other providers (Outlook, SendGrid, etc.):
-  Choose "Custom SMTP" in the wizard and enter:
-    Host : your SMTP host
-    Port : usually 587
-    User : your email address
-    Pass : your SMTP password
+  Choose "Custom SMTP" and enter host, port, user, password.
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 12: PASSWORD RESET FLOW
+  PART 13: PASSWORD RESET FLOW
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   POST /api/auth/forgot-password   { email }
@@ -432,13 +515,13 @@ Option B — After setup, without re-running the full wizard:
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 13: CONFIGURING SMS (TWILIO)
+  PART 14: CONFIGURING SMS (TWILIO)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   1. Sign up at twilio.com
   2. Get a phone number from the Twilio console
   3. Copy your Account SID and Auth Token from the dashboard
-  4. Enter them in the wizard when prompted for SMS
+  4. Enter them in the OTP panel (GUI) or wizard when prompted
 
   Account SID : ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
   Auth Token  : your_auth_token
@@ -446,7 +529,7 @@ Option B — After setup, without re-running the full wizard:
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 14: ENVIRONMENT VARIABLES
+  PART 15: ENVIRONMENT VARIABLES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   Create a .env file in this folder (copy .env.example):
@@ -461,7 +544,7 @@ Option B — After setup, without re-running the full wizard:
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 15: ALL API ENDPOINTS
+  PART 16: ALL API ENDPOINTS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   Base URL: http://localhost:3001/api
@@ -498,11 +581,14 @@ Option B — After setup, without re-running the full wizard:
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PART 16: TROUBLESHOOTING
+  PART 17: TROUBLESHOOTING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+  GUI won't open
+    → Run: npm install  (Electron must be installed first)
+
   "No skeletal.config.json found"
-    → Run: npm run setup
+    → Click Generate in the GUI, or run: npm run setup
 
   "MongoDB connection failed"
     → Check your MongoDB URI is correct and MongoDB is running
@@ -513,24 +599,23 @@ Option B — After setup, without re-running the full wizard:
     → Check 2-Step Verification is on in your Google Account
 
   CORS errors in browser
-    → Re-run npm run setup and add your frontend origin
+    → Re-run setup / click Generate and add your frontend origin
       (e.g. http://localhost:3000 or https://yoursite.com)
 
   "Cannot find module" errors
     → Run: npm install
 
   skeletal-client.js is out of date
-    → Run: node cli/index.js regen-sdk
+    → Click [ Generate & Inject SDK ] in the GUI, or run:
+      node cli/index.js regen-sdk
 
   429 Too many requests during testing
-    → Increase globalMax or authMax in skeletal.config.json
-    → Restart the server after changing the config
+    → Increase globalMax or authMax in the Rate Limit panel (GUI)
+      or in skeletal.config.json, then restart the server
 
   Upload fails immediately
     → Make sure the server has been started at least once
       (it creates the uploads folder on startup)
-    → Check the file type is in allowedTypes (or remove that
-      field from config to allow all types)
 
   Password reset token not in response
     → NODE_ENV=production hides the token for security
